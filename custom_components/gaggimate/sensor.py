@@ -29,7 +29,8 @@ from .const import (
     UNIQUE_ID_TARGET_TEMP,
     UNIQUE_ID_UPDATE_DISPLAY,
     UNIQUE_ID_UPDATE_CONTROLLER,
-    UNIQUE_ID_LATEST_VERSION
+    UNIQUE_ID_LATEST_VERSION,
+    UNIQUE_ID_SCALE_CONNECTED
 )
 from .coordinator import GaggiMateCoordinator
 
@@ -54,6 +55,7 @@ async def async_setup_entry(
         GaggiMateDisplayUpdateSensor(coordinator, entry),
         GaggiMateControllerUpdateSensor(coordinator, entry),
         GaggiMateControllerVersionSensor(coordinator, entry),
+        GaggiMateScaleConnected(coordinator, entry),
     ]
 
     async_add_entities(entities)
@@ -201,6 +203,24 @@ class GaggiMateSelectedProfileSensor(GaggiMateEntity, SensorEntity):
             return None
         return self.coordinator.data.get("p")
 
+    
+class GaggiMateScaleConnected(GaggiMateEntity, SensorEntity):
+    """Scale connected Status"""
+
+    _attr_icon = "mdi:scale"
+
+    def __init__(self, coordinator: GaggiMateCoordinator, entry: ConfigEntry) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, entry)
+        self._attr_name = "Scale connection status"
+        self._attr_unique_id = f"{coordinator.host}_{GaggiMateScaleConnected}"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the scale connection status."""
+        if self.coordinator.data is None:
+            return None
+        return self.coordinator.data.get("bc")
 
 class _GaggiMateDiagnosticSensor(GaggiMateEntity, SensorEntity):
     """Base class for diagnostic sensors."""
@@ -238,6 +258,8 @@ class GaggiMateDisplayVersionSensor(_GaggiMateDiagnosticSensor):
 class GaggiMateDisplayUpdateSensor(_GaggiMateDiagnosticSensor):
     """Display Update Available."""
 
+    _attr_icon = "mdi:update"
+
     def __init__(self, coordinator: GaggiMateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
         self._attr_name = "Display Update Available"
@@ -251,6 +273,8 @@ class GaggiMateDisplayUpdateSensor(_GaggiMateDiagnosticSensor):
 class GaggiMateControllerVersionSensor(_GaggiMateDiagnosticSensor):
     """Controller firmware version sensor."""
 
+    _attr_icon = "mdi:application-braces"
+
     def __init__(self, coordinator: GaggiMateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
         self._attr_name = "Controller Firmware Version"
@@ -263,6 +287,8 @@ class GaggiMateControllerVersionSensor(_GaggiMateDiagnosticSensor):
 class GaggiMateControllerUpdateSensor(_GaggiMateDiagnosticSensor):
     """Controller Update Available."""
 
+    _attr_icon = "mdi:update"
+
     def __init__(self, coordinator: GaggiMateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
         self._attr_name = "Controller Update Available"
@@ -274,6 +300,8 @@ class GaggiMateControllerUpdateSensor(_GaggiMateDiagnosticSensor):
 
 class GaggiMateLatestVersionSensor(_GaggiMateDiagnosticSensor):
     """Latest Software Version."""
+
+    _attr_icon = "mdi:application-braces"
 
     def __init__(self, coordinator: GaggiMateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
