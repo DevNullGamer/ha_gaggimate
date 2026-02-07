@@ -74,6 +74,11 @@ class GaggiMateConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self._discovered_host: str | None = None
+        self._discovered_port: int | None = None
+
     async def async_step_zeroconf(
         self, discovery_info: zeroconf.ZeroconfServiceInfo
     ) -> FlowResult:
@@ -88,7 +93,7 @@ class GaggiMateConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         # Try to validate connection
         try:
-            info = await validate_connection(self.hass, host, port)
+            await validate_connection(self.hass, host, port)
         except CannotConnect:
             _LOGGER.debug("Cannot connect to discovered GaggiMate at %s:%s", host, port)
             return self.async_abort(reason="cannot_connect")
@@ -96,12 +101,31 @@ class GaggiMateConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception during discovery validation")
             return self.async_abort(reason="unknown")
 
-        # Store discovered info for user confirmation
-        self.context["title_placeholders"] = {"name": info["title"]}
+        # Store discovered info for confirmation step
+        self._discovered_host = host
+        self._discovered_port = port
+        self.context["title_placeholders"] = {"name": f"GaggiMate ({host})"}
 
-        # Pre-fill the form with discovered values and show to user
-        return await self.async_step_user(
-            user_input={CONF_HOST: host, CONF_PORT: port}
+        return await self.async_step_discovery_confirm()
+
+    async def async_step_discovery_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Confirm discovery."""
+        if user_input is not None:
+            return self.async_create_entry(
+                title=f"GaggiMate {self._discovered_host}",
+                data={
+                    CONF_HOST: self._discovered_host,
+                    CONF_PORT: self._discovered_port,
+                },
+            )
+
+        return self.async_show_form(
+            step_id="discovery_confirm",
+            description_placeholders={
+                "name": f"{self._discovered_host}:{self._discovered_port}"
+            },
         )
 
     async def async_step_user(

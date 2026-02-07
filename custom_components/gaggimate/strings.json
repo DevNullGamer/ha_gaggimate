@@ -9,7 +9,7 @@
           "port": "Port"
         }
       },
-      "zeroconf_confirm": {
+      "discovery_confirm": {
         "title": "Discovered GaggiMate",
         "description": "A GaggiMate device was discovered at {name}. Do you want to add it?"
       }
